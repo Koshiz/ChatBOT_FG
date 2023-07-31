@@ -2,6 +2,8 @@ import os
 import pyodbc
 import numpy as np
 import tiktoken
+import subprocess
+import json
 
 # Define the database connection details
 server_name = '192.168.120.34'
@@ -39,6 +41,9 @@ with open(mapping_path, "r", encoding='utf-8') as mapping_file:
 #     encoding = tiktoken.get_encoding(encoding_name)
 #     num_tokens = len(encoding.encode(string))
 #     return num_tokens
+
+#Create a list for questions
+questions_list = []
     
 # Iterate through each line in the mapping file and process the corresponding text file
 for line in mapping_lines:
@@ -63,13 +68,52 @@ for line in mapping_lines:
         questions = lines[::2]
         answers = lines[1::2]
         
-        # print(len(questions))
-        
-
+        #append questions to the question_list list
+        questions_list.append(questions)
+              
         # # Iterate through questions and answers and insert them into the database
         # for question, answer in zip(questions, answers):  
         #     insert_into_sql(url, question.strip(), answer.strip())
         
         # tokens_count = num_tokens_from_string(questions[0], "cl100k_base")
         # print("Number of Tokens: ", tokens_count)
-        
+
+
+# print(questions_list)
+
+# Initialize empty list to store embeddings
+embeddings_list = []
+
+# Loop through each question to get the embeddings
+for question in questions_list:
+    # Convert the current question to a JSON string
+    question_json = json.dumps({"sentence": question})
+
+    # Construct the curl command with the current question as the payload
+    curl_command = [
+        "curl",
+        "-X", "POST",
+        "-H", "accept: application/json",
+        "-H", "X-API-Key: hwu6VVcbG3J8ujKm8Nwn_A",
+        "-d", question_json,
+        "https://chatbotapi.netexam.com/api/getEmbeddings/?sentence=question_json"
+    ]
+
+    # Run the curl command and capture the output
+    output = subprocess.check_output(curl_command, text=True)
+
+    # Parse the JSON output to extract the embeddings
+    response = json.loads(output)
+    
+    # print(response)
+    
+    # Extract the embeddings from the response and append them to the embeddings_list
+    embeddings_list.append(response['embedding_list'])
+
+    print(embeddings_list)
+
+    
+    #Extracting the embeddings from the response
+    # embeddings = response['embeddings']
+    
+
